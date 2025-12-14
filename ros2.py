@@ -62,27 +62,17 @@ def add_rtx_lidar(num_envs, robot_type, lidar_type, debug=False):
     
     annotator_lst = []
     for i in range(num_envs):
-        if robot_type == "g1":
-            lidar_sensor = LidarRtx(
-                f"/World/envs/env_{i}/Robot/head_link/lidar_sensor",
-                rotation_frequency=200,
-                pulse_time=1,
-                translation=(0.0, 0.0, 0.0),
-                orientation=(1.0, 0.0, 0.0, 0.0),
-                config_file_name="Unitree_L1",
-            )
 
-        else:
-            _, lidar_sensor = omni.kit.commands.execute(
-                "IsaacSensorCreateRtxLidar",
-                path=f"/World/envs/env_{i}/Robot/base/lidar_sensor",
-                parent=None,
-                translation=trans,
-                orientation=Gf.Quatd(quat[3], quat[0], quat[1], quat[2]),
-                config=config,
-            )
-            # if lidar_type == "Extra":
-            #     attach_usd_to_sensor(lidar_sensor.GetPath(), "./lidar/os2_mesh.usd")
+        _, lidar_sensor = omni.kit.commands.execute(
+            "IsaacSensorCreateRtxLidar",
+            path=f"/World/envs/env_{i}/Robot/base/lidar_sensor",
+            parent=None,
+            translation=trans,
+            orientation=Gf.Quatd(quat[3], quat[0], quat[1], quat[2]),
+            config=config,
+        )
+        # if lidar_type == "Extra":
+        #     attach_usd_to_sensor(lidar_sensor.GetPath(), "./lidar/os2_mesh.usd")
 
         lidar_texture = rep.create.render_product(lidar_sensor.GetPath(), [1, 1], name="UnitreeL1")
         if debug:
@@ -130,7 +120,7 @@ def attach_usd_to_sensor(sensor_path: str, usd_path: str, visible=True):
         prim = stage.GetPrimAtPath(path)
         prim.GetAttribute("visibility").Set("inherited")
 
-def add_camera(num_envs, robot_type):
+def add_camera(num_envs):
     for i in range(num_envs):
         cameraCfg = CameraCfg(
             prim_path=f"/World/envs/env_{i}/Robot/base/front_cam",
@@ -150,12 +140,6 @@ def add_camera(num_envs, robot_type):
                 convention="ros",
             ),
         )
-
-        if robot_type == "g1":
-            cameraCfg.prim_path = f"/World/envs/env_{i}/Robot/head_link/front_cam"
-            cameraCfg.offset = CameraCfg.OffsetCfg(
-                pos=(0.0, 0.0, 0.0), rot=(0.5, -0.5, 0.5, -0.5), convention="ros"
-            )
 
         Camera(cameraCfg)
 
@@ -180,7 +164,7 @@ def add_copter_camera():
 
     Camera(cameraCfg)
 
-def pub_robo_data_ros2(robot_type, num_envs, base_node, env, annotator_lst):
+def pub_robo_data_ros2(num_envs, base_node, env, annotator_lst):
 
     for i in range(num_envs):
         # publish ros2 info
@@ -200,17 +184,16 @@ def pub_robo_data_ros2(robot_type, num_envs, base_node, env, annotator_lst):
             env.unwrapped.scene["robot"].data.root_ang_vel_b[i, :],
             i,
         )
-
-        if robot_type == "go2":
-            base_node.publish_robot_state(
-                [
-                    env.unwrapped.scene["contact_forces"].data.net_forces_w[i][4][2],
-                    env.unwrapped.scene["contact_forces"].data.net_forces_w[i][8][2],
-                    env.unwrapped.scene["contact_forces"].data.net_forces_w[i][14][2],
-                    env.unwrapped.scene["contact_forces"].data.net_forces_w[i][18][2],
-                ],
-                i,
-            )
+        
+        base_node.publish_robot_state(
+            [
+                env.unwrapped.scene["contact_forces"].data.net_forces_w[i][4][2],
+                env.unwrapped.scene["contact_forces"].data.net_forces_w[i][8][2],
+                env.unwrapped.scene["contact_forces"].data.net_forces_w[i][14][2],
+                env.unwrapped.scene["contact_forces"].data.net_forces_w[i][18][2],
+            ],
+            i,
+        )
 
         try:
             for lidar_id in range(2): 

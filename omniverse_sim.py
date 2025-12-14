@@ -124,8 +124,8 @@ from ros2 import (
 from geometry_msgs.msg import Twist
 
 
-from agent_cfg import unitree_go2_agent_cfg, unitree_g1_agent_cfg
-from custom_rl_env import UnitreeGo2CustomEnvCfg, G1RoughEnvCfg
+from agent_cfg import unitree_go2_agent_cfg
+from custom_rl_env import UnitreeGo2CustomEnvCfg
 import custom_rl_env
 
 from robots.copter.config import CRAZYFLIE_CFG
@@ -140,17 +140,17 @@ def sub_keyboard_event(event, *args, **kwargs) -> bool:
     if len(custom_rl_env.base_command) > 0:
         if event.type == carb.input.KeyboardEventType.KEY_PRESS:
             if event.input.name == "W":
-                custom_rl_env.base_command["0"] = [1, 0, 0]
+                custom_rl_env.base_command["0"] = [2, 0, 0]
             if event.input.name == "S":
-                custom_rl_env.base_command["0"] = [-1, 0, 0]
+                custom_rl_env.base_command["0"] = [-2, 0, 0]
             if event.input.name == "A":
-                custom_rl_env.base_command["0"] = [0, 1, 0]
+                custom_rl_env.base_command["0"] = [0, 2, 0]
             if event.input.name == "D":
-                custom_rl_env.base_command["0"] = [0, -1, 0]
+                custom_rl_env.base_command["0"] = [0, -2, 0]
             if event.input.name == "Q":
-                custom_rl_env.base_command["0"] = [0, 0, 1]
+                custom_rl_env.base_command["0"] = [0, 0, 2]
             if event.input.name == "E":
-                custom_rl_env.base_command["0"] = [0, 0, -1]
+                custom_rl_env.base_command["0"] = [0, 0, -2]
 
             if len(custom_rl_env.base_command) > 1:
                 if event.input.name == "I":
@@ -215,23 +215,11 @@ def move_copter(copter):
 
 def setup_custom_env():
     try:
-        if args_cli.custom_env == "warehouse":
-            cfg_scene = sim_utils.UsdFileCfg(usd_path="./envs/warehouse.usd")
-            cfg_scene.func("/World/warehouse", cfg_scene, translation=(0.0, 0.0, 0.0))
-
-        if args_cli.custom_env == "office":
-            cfg_scene = sim_utils.UsdFileCfg(usd_path="./envs/office.usd")
-            cfg_scene.func("/World/office", cfg_scene, translation=(0.0, 0.0, 0.0))
-
-        if args_cli.custom_env == "railway":
-            cfg_scene = sim_utils.UsdFileCfg(usd_path="/home/ycao/go2_omniverse/envs/railway.usd")
-            cfg_scene.func("/World/railwayenv", cfg_scene, translation=(0.0, 0.0, 0.0))
-
-    except:
-        print(
-            "Error loading custom environment. You should download custom envs folder from: https://drive.google.com/drive/folders/1vVGuO1KIX1K6mD6mBHDZGm9nk2vaRyj3?usp=sharing"
-        )
-
+        cfg_scene = sim_utils.UsdFileCfg(usd_path="/home/ycao/go2_omniverse/envs/railway.usd")
+        cfg_scene.func("/World/railwayenv", cfg_scene, translation=(0.0, 0.0, 0.0))
+    except Exception as e:
+        print(f"[ERROR] Failed to load custom env: {e}")
+    
 
 def cmd_vel_cb(msg, num_robot):
     x = msg.linear.x
@@ -269,9 +257,6 @@ def run_sim():
 
     env_cfg = UnitreeGo2CustomEnvCfg()
 
-    if args_cli.robot == "g1":
-        env_cfg = G1RoughEnvCfg()
-
     # TODO need to think about better copter integration.
     # copter_cfg = CRAZYFLIE_CFG
     # copter_cfg.spawn.func(
@@ -287,9 +272,6 @@ def run_sim():
     specify_cmd_for_robots(env_cfg.scene.num_envs)
 
     agent_cfg: RslRlOnPolicyRunnerCfg = unitree_go2_agent_cfg
-
-    if args_cli.robot == "g1":
-        agent_cfg: RslRlOnPolicyRunnerCfg = unitree_g1_agent_cfg
 
     # create isaac environment
     env = gym.make(args_cli.task, cfg=env_cfg)
@@ -326,7 +308,7 @@ def run_sim():
     UnitreeL1_annotator_lst = add_rtx_lidar(env_cfg.scene.num_envs, args_cli.robot, "UnitreeL1", False)
     ExtraLidar_annotator_lst = add_rtx_lidar(env_cfg.scene.num_envs, args_cli.robot, "Extra", False)
     annotator_lst = UnitreeL1_annotator_lst + ExtraLidar_annotator_lst
-    add_camera(env_cfg.scene.num_envs, args_cli.robot)
+    add_camera(env_cfg.scene.num_envs)
     # add_copter_camera()
 
     # create ros2 camera stream omnigraph
@@ -351,7 +333,6 @@ def run_sim():
             # env stepping
             obs, _, _, _ = env.step(actions)
             pub_robo_data_ros2(
-                args_cli.robot,
                 env_cfg.scene.num_envs,
                 base_node,
                 env,

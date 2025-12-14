@@ -49,7 +49,6 @@ from isaaclab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 import isaaclab_tasks.manager_based.locomotion.velocity.mdp as mdp
 
 
-from robots.g1.config import G1_CFG
 
 
 base_command = {}

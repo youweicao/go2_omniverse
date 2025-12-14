@@ -39,4 +39,4 @@ conda activate env_isaaclab
 export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
 # Run the Python script
-python main.py --robot_amount 1 --robot go2 --device cuda --enable_cameras --custom_env railway
+python main.py --robot_amount 1 --device cuda --enable_cameras #--custom_env railway
