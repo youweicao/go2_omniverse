@@ -222,6 +222,11 @@ def setup_custom_env():
         if args_cli.custom_env == "office":
             cfg_scene = sim_utils.UsdFileCfg(usd_path="./envs/office.usd")
             cfg_scene.func("/World/office", cfg_scene, translation=(0.0, 0.0, 0.0))
+
+        if args_cli.custom_env == "railway":
+            cfg_scene = sim_utils.UsdFileCfg(usd_path="/home/ycao/go2_omniverse/envs/railway.usd")
+            cfg_scene.func("/World/railwayenv", cfg_scene, translation=(0.0, 0.0, 0.0))
+
     except:
         print(
             "Error loading custom environment. You should download custom envs folder from: https://drive.google.com/drive/folders/1vVGuO1KIX1K6mD6mBHDZGm9nk2vaRyj3?usp=sharing"
@@ -329,6 +334,13 @@ def run_sim():
         create_front_cam_omnigraph(i)
 
     setup_custom_env()
+
+    # delete /World/ground
+    # preload a plane is used for make the robot standing initially
+    ground_prim = omni.usd.get_context().get_stage().GetPrimAtPath("/World/ground")
+    if ground_prim.IsValid():
+        omni.usd.get_context().get_stage().RemovePrim(ground_prim.GetPath())
+    time.sleep(1.0)
 
     # simulate environment
     while simulation_app.is_running():
